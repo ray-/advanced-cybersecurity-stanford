@@ -34,6 +34,40 @@ public class SimpleWebServer {
         }                                                
     }                                                    
 
+    public void storeFile(BufferedReader br,
+            OutputStreamWriter osw,
+            String pathname) throws Exception {
+        FileWriter fw = null;
+        try {
+            fw = new FileWriter(pathname);
+            String s = br.readLine();
+            while (s != null) {
+                fw.write(s);
+                s = br.readLine();
+            }
+            fw.close();
+            osw.write("HTTP/1.0 2.0 Created");
+        } catch (Exception e) {
+            osw.write("HTTP/1.0 500 Internal Server Error");
+        }
+    }
+
+    public void logEntry(String filename, String record) throws IOException {
+        FileWriter fw = null;
+        try {
+            fw = new FileWriter(filename, true);
+            fw.write(getTimestamp() + " " + record);
+        } finally {
+            if (fw != null) {
+                fw.close();
+            }
+        }
+    }
+
+    public String getTimestamp() {
+        return (new Date()).toString();
+    }
+
     /* Reads the HTTP request from the client, and
        responds with the file the user requested or
        a HTTP error code. */
@@ -65,8 +99,9 @@ public class SimpleWebServer {
                try to respond with the file
                the user is requesting */
             serveFile (osw,pathname);                   
-        }                                              
-        else {                                         
+        } else if (command.equals("PUT")) {
+            storeFile(br, osw, pathname);
+        } else {                                         
             /* if the request is a NOT a GET,
                return an error saying this server
                does not implement the requested command */
@@ -118,9 +153,8 @@ public class SimpleWebServer {
 
     /* This method is called when the program is run from
        the command line. */
-    public static void main (String argv[]) throws Exception { 
-        int port = Integer.parseInt(argv[0]);
-        PORT = port;
+    public static void main (String[] argv) throws Exception {
+        PORT = Integer.parseInt(argv[0]);
         /* Create a SimpleWebServer object, and run it */
         SimpleWebServer sws = new SimpleWebServer();           
         sws.run();                                             
